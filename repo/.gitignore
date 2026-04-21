@@ -1,0 +1,54 @@
+# ── Dependencies ─────────────────────────────────────────────────────────────
+node_modules/
+
+# ── Environment / secrets ─────────────────────────────────────────────────────
+# Real env files contain encryption keys, JWT secrets, DB URIs — never commit
+.env
+.env.*
+!.env.example
+!docker.env.example
+
+# ── Build output ──────────────────────────────────────────────────────────────
+dist/
+build/
+frontend/dist/
+frontend/build/
+
+# ── Uploaded / user-generated files ──────────────────────────────────────────
+# Uploaded documents and quarantined files must not be committed
+backend/uploads/
+!backend/uploads/.gitkeep
+!backend/uploads/quarantine/.gitkeep
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# ── Test coverage & reports ───────────────────────────────────────────────────
+coverage/
+.nyc_output/
+
+# ── Editor & OS artifacts ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── Claude Code local settings ────────────────────────────────────────────────
+# settings.local.json holds machine-specific permissions; settings.json is shared
+.claude/settings.local.json
+
+# ── Docker volumes / runtime data ────────────────────────────────────────────
+mongo-data/
+docker-data/
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+*.pem
+*.key
+*.cert
+*.p12

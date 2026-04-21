@@ -1,0 +1,202 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, sans-serif;
+  background: #f5f5f5;
+  color: #1a1a1a;
+  font-size: 15px;
+}
+
+/* Layout */
+.layout { display: flex; flex-direction: column; min-height: 100vh; }
+
+.header {
+  background: #1a1a2e;
+  color: #fff;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.logo { font-size: 18px; font-weight: 700; white-space: nowrap; }
+
+.nav { display: flex; gap: 16px; flex-wrap: wrap; }
+
+.nav-link { color: #ccc; text-decoration: none; font-size: 14px; padding: 4px 8px; border-radius: 4px; }
+.nav-link:hover { color: #fff; background: rgba(255,255,255,0.1); }
+.nav-link.active { color: #fff; background: rgba(255,255,255,0.2); }
+
+.main { flex: 1; padding: 24px; max-width: 1100px; margin: 0 auto; width: 100%; }
+
+/* Page */
+.page h1 { font-size: 24px; margin-bottom: 20px; }
+.page h2 { font-size: 18px; margin: 20px 0 12px; }
+.page h3 { font-size: 15px; margin: 12px 0 8px; }
+
+/* Filter bar */
+.filter-bar {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 16px; padding: 16px;
+  background: #fff; border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.filter-bar input, .filter-bar select {
+  padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px;
+  font-size: 13px; background: #fff;
+}
+
+.results-info { font-size: 13px; color: #666; margin-bottom: 12px; }
+
+/* Vehicle grid */
+.vehicle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+
+.vehicle-card {
+  background: #fff; border-radius: 8px; padding: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.vehicle-card.unavailable { opacity: 0.6; }
+
+.vehicle-card-header { display: flex; justify-content: space-between; align-items: baseline; }
+.vehicle-title { font-weight: 600; font-size: 14px; }
+.vehicle-price { font-weight: 700; color: #1a1a2e; }
+
+.vehicle-meta { display: flex; gap: 10px; font-size: 12px; color: #666; flex-wrap: wrap; }
+
+.vehicle-addons { display: flex; flex-direction: column; gap: 4px; }
+.addon-label { font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+/* Status badges */
+.status-badge {
+  font-size: 11px; padding: 2px 7px; border-radius: 10px;
+  font-weight: 600; text-transform: uppercase;
+}
+.status-available    { background: #d4edda; color: #155724; }
+.status-reserved     { background: #fff3cd; color: #856404; }
+.status-created      { background: #cce5ff; color: #004085; }
+.status-invoiced     { background: #e2d9f3; color: #432874; }
+.status-settled      { background: #d1ecf1; color: #0c5460; }
+.status-fulfilled    { background: #d4edda; color: #155724; }
+.status-cancelled    { background: #f8d7da; color: #721c24; }
+.status-active       { background: #d4edda; color: #155724; }
+.status-draft        { background: #e2e3e5; color: #383d41; }
+.status-paused       { background: #fff3cd; color: #856404; }
+.status-rolled_back  { background: #f8d7da; color: #721c24; }
+.status-pending      { background: #e2e3e5; color: #383d41; }
+
+/* Buttons */
+.btn {
+  padding: 8px 16px; border: none; border-radius: 4px;
+  cursor: pointer; font-size: 14px; font-weight: 500;
+}
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn-primary { background: #1a1a2e; color: #fff; }
+.btn-primary:hover:not(:disabled) { background: #2d2d4e; }
+.btn-sm { padding: 4px 10px; font-size: 12px; background: #e9ecef; color: #333; }
+.btn-sm:hover { background: #dee2e6; }
+.btn-lg { width: 100%; margin-top: 8px; padding: 12px; font-size: 16px; }
+.btn-link { background: none; border: none; color: #0d6efd; cursor: pointer; text-decoration: underline; }
+
+/* Messages */
+.error-msg   { color: #721c24; background: #f8d7da; padding: 8px 12px; border-radius: 4px; font-size: 13px; }
+.success-msg { color: #155724; background: #d4edda; padding: 8px 12px; border-radius: 4px; font-size: 13px; }
+.empty       { color: #888; font-style: italic; }
+.loading     { color: #666; font-size: 14px; }
+
+/* Pagination */
+.pagination { display: flex; align-items: center; gap: 12px; margin-top: 20px; justify-content: center; }
+
+/* Cart */
+.cart-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+.cart-item {
+  background: #fff; border-radius: 8px; padding: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.cart-item-id { font-weight: 600; font-size: 13px; color: #555; }
+.cart-item-meta { display: flex; gap: 14px; font-size: 13px; color: #666; margin-top: 6px; }
+.cart-item-addons { font-size: 12px; color: #888; margin-top: 4px; }
+
+/* Checkout */
+.checkout-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 700px) { .checkout-layout { grid-template-columns: 1fr; } }
+
+.order-card {
+  background: #fff; border-radius: 8px; padding: 14px; cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 10px;
+  border: 2px solid transparent;
+}
+.order-card.selected { border-color: #1a1a2e; }
+.order-id { font-weight: 600; font-size: 13px; }
+.order-meta { display: flex; gap: 12px; font-size: 12px; color: #666; margin-top: 6px; flex-wrap: wrap; }
+
+.payment-panel {
+  background: #fff; border-radius: 8px; padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.payment-panel select, .payment-panel input { padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+
+.invoice-preview {
+  background: #f8f9fa; border-radius: 6px; padding: 12px;
+  font-size: 14px; line-height: 1.8;
+}
+.invoice-total { font-weight: 700; font-size: 16px; margin-top: 4px; }
+
+/* Documents */
+.upload-form {
+  background: #fff; border-radius: 8px; padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 24px;
+}
+.upload-form select, .upload-form input { padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+
+.doc-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.doc-table th, .doc-table td { padding: 10px 14px; text-align: left; font-size: 13px; }
+.doc-table th { background: #f1f3f5; font-weight: 600; }
+.doc-table tr + tr td { border-top: 1px solid #f0f0f0; }
+
+/* Admin */
+.experiment-form {
+  background: #fff; border-radius: 8px; padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 24px;
+}
+.experiment-form input, .experiment-form select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+
+.variant-row { display: flex; gap: 8px; }
+.variant-row input { flex: 1; }
+
+.experiment-list { display: flex; flex-direction: column; gap: 12px; }
+.experiment-card {
+  background: #fff; border-radius: 8px; padding: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.experiment-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.experiment-name { font-weight: 600; }
+.experiment-scope { font-size: 12px; color: #888; }
+.experiment-variants { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.variant-chip { background: #e9ecef; border-radius: 12px; padding: 2px 10px; font-size: 12px; }
+.experiment-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Auth prompt */
+.auth-prompt { background: #fff3cd; border-radius: 8px; padding: 20px; max-width: 480px; }
+.auth-form { display: flex; gap: 10px; margin-top: 12px; }
+.auth-form input { flex: 1; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; font-family: monospace; }
+.user-indicator { font-size: 13px; color: #555; margin-bottom: 16px; }
+
+/* Finance */
+.tax-form {
+  background: #fff; border-radius: 8px; padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 24px;
+}
+.tax-form input { padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+
+.tax-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.tax-table th, .tax-table td { padding: 10px 14px; text-align: left; font-size: 13px; }
+.tax-table th { background: #f1f3f5; font-weight: 600; }
+.tax-table tr + tr td { border-top: 1px solid #f0f0f0; }
