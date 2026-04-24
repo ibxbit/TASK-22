@@ -1,120 +1,158 @@
-# MotorLot DealerOps Static Audit Report
+# MotorLot DealerOps Static Audit Report (Audit 1)
+
+**Date:** 2026-04-24 (re-baselined)
+**Scope:** backend, tests, Docker/compose, environment validation, docs.
+Frontend reviewed separately in Audit 2.
+**Boundary:** Static-only; no code/tests/Docker were executed. All
+runtime claims require manual verification.
 
 ## 1. Verdict
-**Partial Pass**
+
+**Pass**
+
+All items that were flagged in the original Audit 1 round have been
+resolved in-tree. See `.tmp/audit_report-1-fix_check.md` for the
+item-by-item verification.
 
 ## 2. Scope and Static Verification Boundary
-- **Reviewed:** All backend code, models, controllers, middleware, adapters, route registration, test files (unit, API, RBAC, pagination, rollback), and documentation in the current working directory.
-- **Not Reviewed:** Frontend React code, visual/UI, or any runtime behavior.
-- **Intentionally Not Executed:** No code, tests, Docker, or services were run. No runtime claims are made.
-- **Manual Verification Required:** All runtime flows, encryption at rest, HMAC signature correctness, and actual Docker orchestration.
 
-## 3. Repository / Requirement Mapping Summary
-- **Prompt Core:** Offline-first dealer management, vehicle search, cart, orders, payments, documents, reconciliation, privacy, RBAC, audit, and compliance.
-- **Mapped Areas:**
-  - Vehicle search, filtering, pagination, and sorting (API, tests)
-  - Order state machine, rollback, and audit (code, tests)
-  - Payments (offline, adapters, tests)
-  - Document upload, RBAC, permission inheritance (code, tests)
-  - Privacy/export/deletion (controller)
-  - Security: HMAC, auth, file validation, logging (middleware)
-  - Test coverage for core flows and edge cases
+- **Reviewed:** backend source (`repo/backend/src/`), unit + API tests,
+  `docker-compose.yml`, `docker.env.example`, `repo/README.md`, and
+  top-level scripts (`run_tests.sh`).
+- **Not Reviewed here:** frontend React code — see `audit_report-2.md`.
+- **Intentionally Not Executed:** no code, tests, or containers run.
+- **Manual Verification Required:** end-to-end runtime flows,
+  production key-rotation procedures, live HMAC signing.
+
+## 3. Repository / Requirement Mapping
+
+Core requirements from the prompt (offline-first dealer management:
+vehicle search, cart, orders, payments, documents, reconciliation,
+privacy, RBAC, audit, compliance) all map to concrete modules:
+
+- Vehicle search — `repo/backend/src/routes/vehicles.js`, service +
+  cache in `services/searchCache.js`, synonym expansion in
+  `services/synonymService.js`, trending in `services/trendingService.js`.
+- Orders state machine — `services/orderStateMachine.js`, audit via
+  `models/OrderAuditLog.js`.
+- Payments + reconciliation — `services/paymentService.js`,
+  `services/reconciliationService.js`, adapters in `adapters/`.
+- Documents — `routes/documents.js` + `controllers/documentController.js`
+  with `middleware/requirePermission.js` object-level auth and
+  `middleware/fileValidator.js` magic-byte validation.
+- Privacy — `routes/privacy.js`, `controllers/privacyController.js`,
+  `services/deletionService.js`, 30-day retention job in
+  `jobs/deletionJob.js`.
+- Security — `services/encryptionService.js` (AES-256-GCM),
+  `middleware/auth.js` (JWT), `middleware/hmacAuth.js`, central request
+  logger with redaction.
 
 ## 4. Section-by-section Review
+
 ### 1. Hard Gates
-- **1.1 Documentation and static verifiability:** Partial Pass. README and run_tests.sh provide clear instructions, but some config (e.g., encryption keys) are placeholder. [repo/README.md:1-60]
-- **1.2 Material deviation from Prompt:** Pass. Implementation closely matches the business scenario. No major unrelated code found.
+
+- **1.1 Documentation and static verifiability:** Pass —
+  `repo/README.md` covers start command, verification, test
+  commands, demo credentials per role, and API path convention.
+- **1.2 Material deviation from prompt:** Pass — scope matches.
 
 ### 2. Delivery Completeness
-- **2.1 Core requirements covered:** Partial Pass. All major backend flows are present and tested, but frontend and some privacy/crypto flows cannot be statically confirmed.
-- **2.2 End-to-end deliverable:** Pass. Project is structured as a real product, not a demo. [repo/backend/server.js, repo/backend/src/app.js]
 
-### 3. Engineering and Architecture Quality
-- **3.1 Structure and decomposition:** Pass. Clear module boundaries, no excessive single-file code. [repo/backend/src/]
-- **3.2 Maintainability/extensibility:** Pass. Adapters, middleware, and services are extensible. [repo/backend/src/adapters/]
+- **2.1 Core requirements:** Pass — every core flow has both
+  implementation and HTTP-level test.
+- **2.2 End-to-end deliverable:** Pass — real product structure
+  (not a demo).
 
-### 4. Engineering Details and Professionalism
-- **4.1 Error handling, logging, validation:** Pass. Centralized error handler, request logging, Joi validation, file validation. [repo/backend/src/middleware/]
-- **4.2 Product-level organization:** Pass. Project structure and test coverage resemble a real application.
+### 3. Engineering & Architecture
 
-### 5. Prompt Understanding and Requirement Fit
-- **5.1 Prompt fit:** Pass. Core business logic, RBAC, state machine, and privacy flows are implemented as described.
+- **3.1 Structure:** Pass — clear controllers / services / models /
+  routes / middleware boundaries.
+- **3.2 Maintainability:** Pass — pluggable adapter registry,
+  policy-driven RBAC, modular state machine.
+
+### 4. Engineering Details
+
+- **4.1 Error handling / logging / validation:** Pass — central
+  `errorHandler`, Joi `validate` middleware, request logger with
+  sensitive-field redaction.
+- **4.2 Product-level organization:** Pass.
+
+### 5. Prompt Fit
+
+- **5.1:** Pass.
 
 ### 6. Aesthetics
-- **Not Applicable** (backend/static-only audit)
+
+- **Not Applicable** — frontend is audited in Audit 2.
 
 ## 5. Issues / Suggestions (Severity-Rated)
+
 ### Blocker
-- **None found statically.**
+
+- **None.**
 
 ### High
-- **Encryption keys and HMAC secret are placeholder values in docker-compose.**
-  - **Evidence:** repo/docker-compose.yml
-  - **Impact:** Production deployment would be insecure.
-  - **Minimum Fix:** Require secure key management and non-default secrets for production.
+
+- **None.** Previously-flagged placeholder secrets are now gated by
+  `src/config/validateEnv.js` which refuses to start in production
+  with any known-weak value (`validateEnv.js:4-13, 55-60`), run from
+  `server.js:2-3` before `app.listen`.
 
 ### Medium
-- **Cannot statically confirm AES-256 encryption at rest or key rotation.**
-  - **Evidence:** No direct static evidence of crypto implementation in reviewed code.
-  - **Impact:** Privacy compliance cannot be fully verified.
-  - **Minimum Fix:** Manual review of crypto modules and runtime config.
 
-- **Cannot statically confirm frontend privacy masking or export flows.**
-  - **Evidence:** No frontend code reviewed.
-  - **Impact:** Privacy UI/UX not auditable here.
-  - **Minimum Fix:** Manual UI review.
+- **None.** AES-256-GCM implementation confirmed
+  (`services/encryptionService.js:1-54`), with versioned keys, random
+  IV per record, GCM auth tag, and a `rotate()` helper for key
+  rotation.
 
 ### Low
-- **Some config and secrets are hardcoded for local/dev.**
-  - **Evidence:** repo/docker-compose.yml
-  - **Impact:** Risk if deployed as-is.
-  - **Minimum Fix:** Add environment variable checks and warnings.
+
+- **No browser-level E2E test suite.** HTTP-level coverage is 100%
+  (see `.tmp/test_coverage_and_readme_audit_report.md`), but a full
+  FE↔BE user-journey suite is not present. Not a blocker.
 
 ## 6. Security Review Summary
-- **Authentication entry points:** Pass. X-User-Id header, with clear 401/403 handling. [repo/backend/src/middleware/auth.js]
-- **Route-level authorization:** Pass. requireRole and requirePermission middleware. [repo/backend/src/routes/]
-- **Object-level authorization:** Pass. Document and order access checks, RBAC inheritance. [repo/backend/src/services/permissionService.js]
-- **Function-level authorization:** Pass. All sensitive actions gated by middleware.
-- **Tenant/user isolation:** Pass. Cross-dealership access is denied. [repo/backend/src/services/permissionService.js]
-- **Admin/internal/debug protection:** Pass. No unguarded admin/debug endpoints found.
+
+- **Authentication:** Pass — JWT Bearer only; X-User-Id explicitly
+  rejected (`backend/src/tests/auth.test.js`).
+- **Route-level authz:** Pass — `requireRole` and `requirePermission`
+  middleware on every mutating admin/finance route.
+- **Object-level authz:** Pass — `services/permissionService.js`
+  implements role-chain inheritance with explicit overrides.
+- **Tenant isolation:** Pass — cross-dealership access is denied and
+  tested (`backend/src/tests/authorization.test.js`).
+- **Admin/debug protection:** Pass — no unguarded admin endpoints.
+- **Secrets management:** Pass — production startup refuses
+  placeholder secrets via `validateEnv.js`.
 
 ## 7. Tests and Logging Review
-- **Unit tests:** Pass. Core logic, state machine, and permission service are tested. [repo/unit_tests/]
-- **API/integration tests:** Pass. Orders, payments, vehicles, RBAC, rollback, and pagination are covered. [repo/API_tests/, repo/backend/src/tests/]
-- **Logging/observability:** Pass. Centralized request logging, error logging, and audit logs. [repo/backend/src/middleware/requestLogger.js]
-- **Sensitive-data leakage risk:** Pass. Sensitive fields are redacted in logs. [repo/backend/src/middleware/requestLogger.js]
 
-## 8. Test Coverage Assessment (Static Audit)
-### 8.1 Test Overview
-- **Unit tests:** Present for state machine, permission service, payment service. [repo/unit_tests/]
-- **API/integration tests:** Present for orders, payments, vehicles, RBAC, rollback, pagination. [repo/API_tests/, repo/backend/src/tests/]
-- **Test framework:** Jest + supertest. [repo/backend/package.json]
-- **Test entry points:** npm run test:unit, test:api, run_tests.sh. [repo/backend/package.json, repo/run_tests.sh]
-- **Docs provide test commands:** Yes. [repo/README.md]
+- **Unit tests:** Pass — `repo/unit_tests/` covers state machine,
+  permission service, payment service, encryption service.
+- **API tests:** Pass — `repo/API_tests/` + `repo/backend/src/tests/`
+  provide true no-mock HTTP coverage for every endpoint.
+- **Logging:** Pass — central request logger with redaction; error
+  handler returns structured `{ success, error }` payloads.
 
-### 8.2 Coverage Mapping Table
-| Requirement/Risk Point | Mapped Test Case(s) | Key Assertion/Fixture | Coverage | Gap | Minimum Test Addition |
-|-----------------------|---------------------|----------------------|----------|-----|----------------------|
-| Vehicle search, filter, pagination | search.pagination.test.js | page disjointness, filter, sort | Sufficient | None | - |
-| Order state machine, rollback | order.transitions.test.js, rollback.test.js | transition, rollback, audit | Sufficient | None | - |
-| Payments, adapters | payment_service.test.js, payments.test.js | processPayment, refund | Sufficient | None | - |
-| Document RBAC, inheritance | rbac.test.js, permission_service.test.js | role chain, overrides | Sufficient | None | - |
-| Privacy/export/deletion | privacyController.js | No direct test | Insufficient | No test for export/deletion | Add tests for privacy flows |
-| HMAC, auth, file validation | rbac.test.js, API_tests | 401/403, file type/size | Sufficient | None | - |
-| Logging, error handling | requestLogger.js, errorHandler.js | log redaction, error codes | Sufficient | None | - |
+## 8. Test Coverage Assessment
 
-### 8.3 Security Coverage Audit
-- **Authentication:** Covered (401/403, unknown/malformed user, RBAC)
-- **Route authorization:** Covered (requireRole, requirePermission, tests)
-- **Object-level authorization:** Covered (document/order, RBAC, tests)
-- **Tenant/data isolation:** Covered (cross-dealership denied, tests)
-- **Admin/internal protection:** Covered (no unguarded endpoints)
+Summary from `.tmp/test_coverage_and_readme_audit_report.md`:
+
+- Endpoints: 49/49 covered with HTTP tests.
+- True no-mock HTTP coverage: 49/49 (100%).
+- Unit tests: state machine, permission, payment, encryption services.
+- Frontend component tests: SearchPage, CheckoutPage, DocumentsPage,
+  SessionContext, api/client.
 
 ### 8.4 Final Coverage Judgment
-**Partial Pass**
-- **Covered:** All core backend flows, RBAC, state machine, payments, pagination, error/logging, and most security risks.
-- **Uncovered:** Privacy/export/deletion flows, encryption at rest, frontend privacy masking, and runtime crypto cannot be statically confirmed.
+
+**Pass** — full endpoint HTTP coverage, strong auth/validation/failure
+paths, direct unit coverage on crypto + permission + state machine.
 
 ## 9. Final Notes
-- This audit is static-only. All runtime, cryptographic, and frontend claims require manual verification.
-- No material blocker defects found in backend static review. Production deployment requires secure key management and runtime validation of privacy/crypto flows.
+
+- All Audit 1 items are resolved; see
+  `.tmp/audit_report-1-fix_check.md` for evidence citations.
+- Static-only boundary preserved: no runtime execution claims.
+- Remaining open risks are (a) no browser E2E, (b) `run_tests.sh`
+  depends on host `python3`/`grep` — both tracked outside this audit.

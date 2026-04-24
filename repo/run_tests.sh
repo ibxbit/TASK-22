@@ -1,47 +1,43 @@
 #!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# run_tests.sh — Docker-self-contained test runner for MotorLot DealerOps.
+#
+# Host requirements (everything else runs inside Docker):
+#   • bash (for this script itself)
+#   • Docker Engine
+#   • Docker Compose v2.1.1+  (required for the `--wait` flag used below;
+#                              run `docker compose version` to confirm)
+#
+# Node, npm, Jest, supertest, MongoDB — all inside the backend/mongo
+# containers. No `python3`, `grep`, `jq`, `curl`, or `node` on the host.
+# ─────────────────────────────────────────────────────────────────────────────
+
 set -euo pipefail
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
+log() { echo "[run_tests] $*"; }
 
-log()  { echo "[run_tests] $*"; }
-fail() { echo "[run_tests] ERROR: $*" >&2; exit 1; }
+# ── Bring services up and wait for healthchecks ──────────────────────────────
+# `--wait` blocks until every service with a healthcheck is healthy, so we
+# don't need a custom polling loop (which previously relied on host `python3`
+# + `grep` to parse `docker compose ps --format json`). Healthchecks are
+# defined in docker-compose.yml for both `mongo` and `backend`.
 
-wait_healthy() {
-  local service="$1"
-  local max=60
-  local i=0
-  log "Waiting for $service to become healthy..."
-  until [ "$(docker compose ps --format json "$service" 2>/dev/null \
-             | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('Health',''))" 2>/dev/null)" = "healthy" ] \
-     || docker compose ps "$service" 2>/dev/null | grep -q "healthy"; do
-    i=$((i+1))
-    [ "$i" -ge "$max" ] && fail "$service did not become healthy within ${max}s"
-    sleep 1
-  done
-  log "$service is healthy."
-}
+log "Starting services (will wait for healthchecks)..."
+docker compose up -d --build --wait
 
-# ── Bring services up ──────────────────────────────────────────────────────────
+# ── Run test suites inside the backend container ─────────────────────────────
+# Capture exit codes without aborting on the first failure so both suites run.
 
-log "Starting services..."
-docker compose up -d --build
-
-wait_healthy mongo
-wait_healthy backend
-
-# ── Run unit tests ─────────────────────────────────────────────────────────────
+UNIT_EXIT=0
+API_EXIT=0
 
 log "Running unit tests (unit_tests/)..."
-docker compose exec -T backend npm run test:unit
-UNIT_EXIT=$?
-
-# ── Run API tests ──────────────────────────────────────────────────────────────
+docker compose exec -T backend npm run test:unit || UNIT_EXIT=$?
 
 log "Running API tests (API_tests/)..."
-docker compose exec -T backend npm run test:api
-API_EXIT=$?
+docker compose exec -T backend npm run test:api || API_EXIT=$?
 
-# ── Report ─────────────────────────────────────────────────────────────────────
+# ── Report ───────────────────────────────────────────────────────────────────
 
 echo ""
 if [ "$UNIT_EXIT" -eq 0 ] && [ "$API_EXIT" -eq 0 ]; then
