@@ -59,28 +59,29 @@ This script:
 - Starts (or reuses) all Docker services
 - Waits for `mongo` and `backend` to pass their health checks
 - Runs **unit tests** (`unit_tests/`) inside the backend container
-- Runs **API tests** (`API_tests/`) inside the backend container
-- Exits `0` only when every test passes
+- Runs **API / E2E tests** (`API_tests/`) inside the backend container
+- Runs **frontend component tests** (Vitest + RTL) inside the frontend container
+- Exits `0` only when every suite passes
 
-You can also run test suites individually:
+You can also run suites individually:
 
 ```bash
 # Unit tests only (unit_tests/)
 docker compose exec backend npm run test:unit
 
-# API tests only (API_tests/)
+# API / E2E tests only (API_tests/)
 docker compose exec backend npm run test:api
 
-# All backend tests — includes src/tests/ integration suite in addition to above
+# Full backend test suite — includes src/tests/ integration tests in addition to above
 docker compose exec backend npm test
 
 # Frontend component tests (Vitest + React Testing Library)
 docker compose exec frontend npm test
 ```
 
-> **Note:** `run_tests.sh` runs `test:unit` + `test:api` but NOT `src/tests/`.
-> To run the full backend test suite (including auth, RBAC, checkout, privacy, etc.),
-> use `docker compose exec backend npm test`.
+> **Note:** `run_tests.sh` runs `test:unit` + `test:api` + frontend `npm test`,
+> but NOT `backend/src/tests/` directly. To run the full backend integration suite
+> (auth, RBAC, checkout, privacy, etc.) use `docker compose exec backend npm test`.
 
 ### 5. Stop services
 
@@ -113,14 +114,20 @@ repo/
 │   │   ├── pages/           Search (trending+presets), Admin (experiments+synonyms), Checkout…
 │   │   ├── context/         SessionContext (JWT login/logout)
 │   │   └── tests/           Vitest + RTL component tests (SearchPage, CheckoutPage,
-│   │                                   DocumentsPage, SessionContext, api/client)
+│   │                                   DocumentsPage, SessionContext, api/client,
+│   │                                   CartContext, VehicleCard, Layout, AdminPage,
+│   │                                   CartPage, FinancePage, PrivacyPage)
 │   ├── Dockerfile
 │   ├── vitest.config.js
 │   └── vite.config.js
 ├── unit_tests/              Pure + DB-backed service-layer tests
 │   ├── state_machine.test.js
 │   ├── permission_service.test.js
-│   └── payment_service.test.js
+│   ├── payment_service.test.js
+│   ├── checkout_service.test.js
+│   ├── tax_service.test.js
+│   ├── invoice_service.test.js
+│   └── reconciliation_service.test.js
 ├── API_tests/               HTTP-layer tests via supertest (no mocking)
 │   ├── experiments.test.js
 │   ├── synonyms.test.js
@@ -131,7 +138,8 @@ repo/
 │   ├── health_cart_analytics.test.js
 │   ├── reconciliation.test.js
 │   ├── finance.test.js
-│   └── documents_extended.test.js
+│   ├── documents_extended.test.js
+│   └── e2e_workflow.test.js
 ├── docker-compose.yml
 └── run_tests.sh
 ```
@@ -345,9 +353,21 @@ curl 'localhost:5000/vehicles/search?make=benz'
 ### Unit tests (`unit_tests/` — run via `npm run test:unit`)
 
 ```
-  state_machine.test.js     — Order FSM transitions, guard logic
-  permission_service.test.js — check(), checkType(), role chain inheritance
-  payment_service.test.js   — getWalletSummary, ledger filtering
+  state_machine.test.js          — Order FSM transitions, guard logic
+  permission_service.test.js     — check(), checkType(), role chain inheritance
+  payment_service.test.js        — getWalletSummary, ledger filtering
+  checkout_service.test.js       — splitItems() grouping, key normalization, ordering
+  tax_service.test.js            — getRates() DB lookups + fallback, calculate() pure math
+  invoice_service.test.js        — lineItems, add-on pricing, tax breakdown, total
+  reconciliation_service.test.js — All 5 check types, happy path, multi-discrepancy
+```
+
+### Backend middleware tests (`backend/src/tests/` — run via `npm test`)
+
+```
+  middleware.test.js  — requireRole (RBAC), validate (Joi coercion + errors),
+                         errorHandler (all 6 error types), fileValidator
+                         (computeHash, validateUpload — MIME, magic bytes, hash check)
 ```
 
 ### API tests (`API_tests/` — run via `npm run test:api`, no mocking of route paths)
@@ -371,6 +391,10 @@ curl 'localhost:5000/vehicles/search?make=benz'
   documents_extended.test.js  — POST /documents/upload (real PDF buffer, magic bytes),
                                   GET /documents/:id/download, POST /documents/:id/share,
                                   POST /documents/:id/submit, POST /documents/:id/approve
+  e2e_workflow.test.js        — Multi-step HTTP flows: search→cart→checkout→pay,
+                                  experiment lifecycle (create/activate/rollback/assign),
+                                  privacy lifecycle (consent/export/deletion/cancel),
+                                  synonym CRUD with search expansion
 ```
 
 ### Frontend component tests (`frontend/src/tests/` — run via `npm test` in frontend)
@@ -381,4 +405,13 @@ curl 'localhost:5000/vehicles/search?make=benz'
   CheckoutPage.test.jsx    — empty state, order list, invoice preview, Pay Now flow
   DocumentsPage.test.jsx   — auth prompt when unauthenticated, upload form, doc table
   api.client.test.js       — Authorization: Bearer header attachment from sessionStorage
+  CartContext.test.jsx     — SET_CART, CLEAR_CART, unknown action, provider isolation
+  VehicleCard.test.jsx     — Display, add-on checkboxes, addToCart call, button states
+  Layout.test.jsx          — Nav links, logo, cart badge, login form, auth state
+  AdminPage.test.jsx       — Tab switching, experiment create/status/rollback/results,
+                              synonym CRUD (add, edit, cancel, delete)
+  CartPage.test.jsx        — Empty state, item display, checkout call, nav, error
+  FinancePage.test.jsx     — Tax rate table, save form, edit-prefill, error handling
+  PrivacyPage.test.jsx     — Consent history, record consent, data export + masking,
+                              deletion request lifecycle (submit, cancel)
 ```

@@ -25,26 +25,31 @@ log() { echo "[run_tests] $*"; }
 log "Starting services (will wait for healthchecks)..."
 docker compose up -d --build --wait
 
-# ── Run test suites inside the backend container ─────────────────────────────
-# Capture exit codes without aborting on the first failure so both suites run.
+# ── Run test suites ───────────────────────────────────────────────────────────
+# Capture exit codes without aborting on the first failure so all suites run.
 
 UNIT_EXIT=0
 API_EXIT=0
+FE_EXIT=0
 
 log "Running unit tests (unit_tests/)..."
 docker compose exec -T backend npm run test:unit || UNIT_EXIT=$?
 
-log "Running API tests (API_tests/)..."
+log "Running API / E2E tests (API_tests/)..."
 docker compose exec -T backend npm run test:api || API_EXIT=$?
+
+log "Running frontend component tests (Vitest + RTL)..."
+docker compose exec -T frontend npm test || FE_EXIT=$?
 
 # ── Report ───────────────────────────────────────────────────────────────────
 
 echo ""
-if [ "$UNIT_EXIT" -eq 0 ] && [ "$API_EXIT" -eq 0 ]; then
+if [ "$UNIT_EXIT" -eq 0 ] && [ "$API_EXIT" -eq 0 ] && [ "$FE_EXIT" -eq 0 ]; then
   log "All tests passed."
   exit 0
 else
   [ "$UNIT_EXIT" -ne 0 ] && log "Unit tests FAILED (exit $UNIT_EXIT)."
-  [ "$API_EXIT"  -ne 0 ] && log "API tests FAILED (exit $API_EXIT)."
+  [ "$API_EXIT"  -ne 0 ] && log "API / E2E tests FAILED (exit $API_EXIT)."
+  [ "$FE_EXIT"   -ne 0 ] && log "Frontend tests FAILED (exit $FE_EXIT)."
   exit 1
 fi

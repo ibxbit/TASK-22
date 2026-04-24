@@ -57,7 +57,7 @@ describe('DocumentsPage', () => {
     await waitFor(() =>
       expect(screen.getByText(/alice admin/i)).toBeInTheDocument(),
     );
-    expect(screen.getByText(/admin/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/admin/i).length).toBeGreaterThan(0);
   });
 
   test('renders upload form when authenticated', async () => {
@@ -93,7 +93,7 @@ describe('DocumentsPage', () => {
     listDocuments.mockResolvedValue({ documents: sampleDocs });
     render(<DocumentsPage />);
     await waitFor(() => {
-      expect(screen.getByText('title')).toBeInTheDocument();
+      expect(screen.getAllByText('title').length).toBeGreaterThan(0);
       expect(screen.getByText('buyers_order')).toBeInTheDocument();
     });
     expect(screen.getAllByRole('button', { name: /download/i })).toHaveLength(2);

@@ -1,0 +1,50 @@
+# Isolated eaglepoint-task22 environment.
+#
+# Ports:      backend → 5010  |  frontend → 5180
+# Docker name: eaglepoint-task22-{service}-1
+#
+# Key difference from the default stack: npm install runs at container
+# startup (not during `docker build`), so images build without network
+# access.  Named volumes persist node_modules across restarts so install
+# only happens once per volume lifecycle.
+#
+# Usage:
+#   docker compose -p eaglepoint-task22 \
+#     -f docker-compose.yml -f docker-compose.task22.yml \
+#     up -d --build --wait
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.task22
+    ports:
+      - "5010:5000"
+    volumes:
+      - uploads_t22:/app/uploads
+      - backend_nm_t22:/app/node_modules   # persist installed packages
+    healthcheck:
+      # Extend start_period to cover npm install time (~2 min) before health
+      # checks start counting failures.
+      start_period: 180s
+      retries: 18
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.task22
+    ports:
+      - "5180:5173"
+    volumes:
+      - frontend_nm_t22:/app/node_modules  # persist installed packages
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5173"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 240s   # covers frontend npm install (~3 min) + Vite startup
+
+volumes:
+  uploads_t22:
+  backend_nm_t22:
+  frontend_nm_t22:

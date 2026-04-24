@@ -1,0 +1,29 @@
+FROM node:20-alpine
+
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+# Copy package manifests — npm install runs at container start, not build time,
+# so this image builds without any network access requirements.
+COPY backend/package*.json ./
+
+# Backend source and test suites
+COPY backend/src            ./src
+COPY backend/server.js      ./server.js
+COPY backend/jest.config.js ./jest.config.js
+COPY backend/jest.setup.js  ./jest.setup.js
+COPY unit_tests             ./unit_tests
+COPY API_tests              ./API_tests
+
+# Symlink so unit_tests imports like '../backend/src/...' resolve correctly
+RUN mkdir -p /app/backend && ln -s /app/src /app/backend/src
+
+# Runtime directories
+RUN mkdir -p uploads/quarantine
+
+COPY backend/entrypoint.task22.sh ./entrypoint.sh
+RUN chmod +x entrypoint.sh
+
+EXPOSE 5000
+CMD ["./entrypoint.sh"]

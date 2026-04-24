@@ -20,6 +20,7 @@ describe('api/client — Authorization interceptor', () => {
 
   beforeEach(async () => {
     sessionStorage.clear();
+    vi.clearAllMocks();
     // Re-import so the module factory runs fresh
     vi.resetModules();
     const mod = await import('../api/client.js');

@@ -1,0 +1,13 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package manifests — npm install runs at container start, not build time.
+COPY frontend/package*.json ./
+COPY frontend/ .
+
+EXPOSE 5173
+
+# Install dependencies then start the Vite dev server.
+# node_modules is a named volume — install only runs once.
+CMD ["sh", "-c", "if [ ! -f node_modules/.install-done ]; then npm install && touch node_modules/.install-done; fi && npm run dev -- --host"]
